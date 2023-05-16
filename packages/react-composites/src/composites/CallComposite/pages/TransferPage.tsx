@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { IStyle, Persona, Spinner, SpinnerSize, Stack, Text, merge, mergeStyles } from '@fluentui/react';
+import { IStyle, Persona, Spinner, SpinnerSize, Stack, Text, mergeStyles } from '@fluentui/react';
 import { ErrorBar, OnRenderAvatarCallback, VideoGallery } from '@internal/react-components';
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocale } from '../../localization';
 import { CallCompositeOptions } from '../CallComposite';
-import { useAdapter } from '../adapter/CallAdapterProvider';
 import { CallArrangement } from '../components/CallArrangement';
 import { usePropsFor } from '../hooks/usePropsFor';
+import { useSelector } from '../hooks/useSelector';
+import { getCallId, getTransferCall } from '../selectors/baseSelectors';
 import { reduceCallControlsForMobile } from '../utils';
 
 /**
@@ -24,8 +25,8 @@ export const TransferPage = (props: LobbyPageProps): JSX.Element => {
   const errorBarProps = usePropsFor(ErrorBar);
   const strings = useLocale().strings.call;
   const videoGalleryProps = usePropsFor(VideoGallery);
-  const call = useAdapter().getState().call;
-  const transferTargetCall = useAdapter().getState().transferTargetCall;
+  const callId = useSelector(getCallId);
+  const transferTargetCall = useSelector(getTransferCall);
 
   // Reduce the controls shown when mobile view is enabled.
   let callControlOptions = props.mobileView
@@ -34,18 +35,20 @@ export const TransferPage = (props: LobbyPageProps): JSX.Element => {
 
   const transferor = videoGalleryProps.remoteParticipants[0];
 
-  let state: 'transferring' | 'connecting' = 'transferring';
-  if (transferTargetCall !== undefined) {
-    if (call?.id !== transferTargetCall.id) {
-      if (['Ringing', 'Connected'].includes(transferTargetCall.state)) {
-        state = 'connecting';
+  const state: 'transferring' | 'connecting' = useMemo(() => {
+    if (transferTargetCall !== undefined) {
+      if (callId !== transferTargetCall.id) {
+        if (['Ringing', 'Connected'].includes(transferTargetCall.state)) {
+          return 'connecting';
+        } else {
+          return 'transferring';
+        }
       } else {
-        state = 'transferring';
+        return 'connecting';
       }
-    } else {
-      state = 'connecting';
     }
-  }
+    return 'transferring';
+  }, [callId, transferTargetCall?.id, transferTargetCall?.state]);
 
   const transferParticipant = state === 'transferring' ? transferor : transferTargetCall?.remoteParticipants[0];
 
@@ -152,14 +155,17 @@ const TransferTile = (props: TransferTileProps): JSX.Element => {
     return () => currentObserver.disconnect();
   }, [observer, tileRef]);
 
-  const placeholderOptions = {
-    userId,
-    text: initialsName ?? displayName,
-    noVideoAvailableAriaLabel,
-    coinSize: personaSize,
-    styles: defaultPersonaStyles,
-    hidePersonaDetails: true
-  };
+  const placeholderOptions = useMemo(
+    () => ({
+      userId,
+      text: initialsName ?? displayName,
+      noVideoAvailableAriaLabel,
+      coinSize: personaSize,
+      styles: defaultPersonaStyles,
+      hidePersonaDetails: true
+    }),
+    [userId, initialsName, displayName, noVideoAvailableAriaLabel, personaSize, defaultPersonaStyles]
+  );
 
   return (
     <div ref={tileRef} className={mergeStyles({ width: '100%', height: '100%' })} data-is-focusable={true}>

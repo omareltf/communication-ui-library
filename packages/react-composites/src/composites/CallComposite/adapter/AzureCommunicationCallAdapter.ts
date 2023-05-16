@@ -166,7 +166,7 @@ class CallContext {
     this.callId = callId;
   }
 
-  public setTransferTargetCallId(call: CallState | undefined): void {
+  public setTransferTargetCall(call: CallState | undefined): void {
     this.setState({ ...this.state, transferTargetCall: call });
   }
 
@@ -188,12 +188,14 @@ class CallContext {
       environmentInfo: this.state.environmentInfo,
       unsupportedBrowserVersionOptedIn: this.state.unsupportedBrowserVersionsAllowed
     };
-    console.log('DEBUG clientState: ', clientState);
+    const transferCall = clientState.transferTargetCallId
+      ? findTransferCall(clientState.calls, clientState.transferTargetCallId)
+      : undefined;
     const newPage = getCallCompositePage(
       call,
       latestEndedCall,
       /* @conditional-compile-remove(unsupported-browser) */ environmentInfo,
-      this.state.transferTargetCall
+      transferCall
     );
     console.log('DEBUG getCallCompositePage: ', newPage);
     if (!IsCallEndedPage(oldPage) && IsCallEndedPage(newPage)) {
@@ -205,9 +207,6 @@ class CallContext {
     }
 
     if (this.state.page) {
-      const transferCall = clientState.transferTargetCallId
-        ? findTransferCall(clientState.calls, clientState.transferTargetCallId)
-        : undefined;
       this.setState({
         ...this.state,
         userId: clientState.userId,
@@ -222,7 +221,7 @@ class CallContext {
           clientState.deviceManager.unparentedViews.find((s) => s.mediaStreamType === 'Video')
             ? 'On'
             : 'Off',
-        transferTargetCall: transferCall ? transferCall : this.state.transferTargetCall
+        transferTargetCall: transferCall
       });
     }
   }
@@ -343,7 +342,7 @@ export class AzureCommunicationCallAdapter<AgentType extends CallAgent | BetaTea
         );
         if (transferCall) {
           this.processNewCall(transferCall);
-          this.context.setTransferTargetCallId(undefined);
+          this.context.setTransferTargetCall(undefined);
           console.log('DEBUG processing new call: ', transferCall?.id);
         }
       }
@@ -681,7 +680,6 @@ export class AzureCommunicationCallAdapter<AgentType extends CallAgent | BetaTea
   private processNewCall(call: CallCommon): void {
     this.call = call;
     this.context.setCurrentCallId(call.id);
-    this.context.setTransferTargetCallId(undefined);
 
     // Resync state after callId is set
     this.context.updateClientState(this.callClient.getState());

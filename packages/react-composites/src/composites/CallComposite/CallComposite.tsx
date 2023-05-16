@@ -297,6 +297,7 @@ const MainScreen = (props: MainScreenProps): JSX.Element => {
         />
       );
       break;
+    /* @conditional-compile-remove(teams-adhoc-call) */
     case 'transferring':
       pageElement = <TransferPage mobileView={props.mobileView} modalLayerHostId={props.modalLayerHostId} />;
       break;
