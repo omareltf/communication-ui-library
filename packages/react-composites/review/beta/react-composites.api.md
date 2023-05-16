@@ -223,6 +223,7 @@ export type CallAdapterClientState = {
     latestErrors: AdapterErrors;
     alternateCallerId?: string;
     environmentInfo?: EnvironmentInfo;
+    transferTargetCall?: CallState;
     roleHint?: Role;
     cameraStatus?: 'On' | 'Off';
     videoBackgroundImages?: VideoBackgroundImage[];
@@ -364,7 +365,7 @@ export type CallCompositeOptions = {
 };
 
 // @public
-export type CallCompositePage = 'accessDeniedTeamsMeeting' | 'call' | 'configuration' | /* @conditional-compile-remove(PSTN-calls) */ 'hold' | 'joinCallFailedDueToNoNetwork' | 'leftCall' | 'lobby' | /* @conditional-compile-remove(rooms) */ 'deniedPermissionToRoom' | 'removedFromCall' | /* @conditional-compile-remove(rooms) */ 'roomNotFound' | /* @conditional-compile-remove(unsupported-browser) */ 'unsupportedEnvironment';
+export type CallCompositePage = 'accessDeniedTeamsMeeting' | 'call' | 'configuration' | /* @conditional-compile-remove(PSTN-calls) */ 'hold' | 'joinCallFailedDueToNoNetwork' | 'leftCall' | 'lobby' | /* @conditional-compile-remove(rooms) */ 'deniedPermissionToRoom' | 'removedFromCall' | /* @conditional-compile-remove(rooms) */ 'roomNotFound' | /* @conditional-compile-remove(unsupported-browser) */ 'unsupportedEnvironment' | /* @conditional-compile-remove(teams-adhoc-call) */ 'transferring';
 
 // @public
 export interface CallCompositeProps extends BaseCompositeProps<CallCompositeIcons> {
