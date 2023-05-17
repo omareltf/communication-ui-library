@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Stack,
   PrimaryButton,
@@ -12,7 +12,12 @@ import {
   TextField,
   Callout,
   mergeStyles,
-  Link
+  Link,
+  IComboBoxOption,
+  SelectableOptionMenuItemType,
+  DefaultButton,
+  Toggle,
+  Dropdown
 } from '@fluentui/react';
 /* @conditional-compile-remove(teams-adhoc-call) */
 import { IconButton, ITextFieldProps, IStackTokens, IButtonStyles, IStackStyles } from '@fluentui/react';
@@ -81,33 +86,44 @@ export interface HomeScreenProps {
   joiningExistingCall: boolean;
 }
 
+const teamsAccounts: Record<string, { userName: string; password: string }> = {
+  '8:orgid:db5cf205-e6b9-4e32-ab3b-08152a09caa1': {
+    userName: 'mgTestUser1@acscallingtest.onmicrosoft.com',
+    password: 'IAmAPassword1'
+  },
+  '8:orgid:58d8f685-d477-4c58-bbab-e11774ddf4f4': {
+    userName: 'mgTestUser2@acscallingtest.onmicrosoft.com',
+    password: 'IAmAPassword2'
+  }
+};
+
 export const HomeScreen = (props: HomeScreenProps): JSX.Element => {
   const imageProps = { src: heroSVG.toString() };
   const headerTitle = props.joiningExistingCall ? 'Join Call' : 'Start or join a call';
   const callOptionsGroupLabel = 'Select a call option';
   const buttonText = 'Next';
   const callOptions: IChoiceGroupOption[] = [
-    { key: 'ACSCall', text: 'Start a call' },
-    /* @conditional-compile-remove(rooms) */
-    { key: 'StartRooms', text: 'Start a Rooms call' },
-    { key: 'TeamsMeeting', text: 'Join a Teams meeting using ACS identity' },
-    /* @conditional-compile-remove(rooms) */
-    { key: 'Rooms', text: 'Join a Rooms Call' },
-    /* @conditional-compile-remove(teams-identity-support) */
-    { key: 'TeamsIdentity', text: 'Join a Teams call using Teams identity' },
-    /* @conditional-compile-remove(one-to-n-calling) */
-    { key: '1:N', text: 'Start a 1:N ACS Call' },
-    /* @conditional-compile-remove(PSTN-calls) */
-    { key: 'PSTN', text: 'Start a PSTN Call' },
+    // { key: 'ACSCall', text: 'Start a call' },
+    // /* @conditional-compile-remove(rooms) */
+    // { key: 'StartRooms', text: 'Start a Rooms call' },
+    // { key: 'TeamsMeeting', text: 'Join a Teams meeting using ACS identity' },
+    // /* @conditional-compile-remove(rooms) */
+    // { key: 'Rooms', text: 'Join a Rooms Call' },
+    // /* @conditional-compile-remove(teams-identity-support) */
+    { key: 'TeamsAdhoc', text: 'Call Teams User(s) or call queue' },
+    { key: 'TeamsIdentity', text: 'Call Teams User(s) or call queue as a Teams identity' }
+    // /* @conditional-compile-remove(one-to-n-calling) */
+    // { key: '1:N', text: 'Start a 1:N ACS Call' },
+    // /* @conditional-compile-remove(PSTN-calls) */
+    // { key: 'PSTN', text: 'Start a PSTN Call' },
     /* @conditional-compile-remove(teams-adhoc-call) */
-    { key: 'TeamsAdhoc', text: 'Call Teams User(s)' }
   ];
   /* @conditional-compile-remove(rooms) */
   const roomIdLabel = 'Room ID';
   /* @conditional-compile-remove(teams-identity-support) */
-  const teamsTokenLabel = 'Enter a Teams token';
+  const teamsTokenLabel = 'Your Teams token';
   /* @conditional-compile-remove(teams-identity-support) */
-  const teamsIdLabel = 'Enter a Teams Id';
+  const teamsIdLabel = 'Your Teams Id';
   /* @conditional-compile-remove(rooms) */
   const roomsRoleGroupLabel = 'Rooms Role';
   /* @conditional-compile-remove(rooms) */
@@ -139,6 +155,12 @@ export const HomeScreen = (props: HomeScreenProps): JSX.Element => {
   const [teamsId, setTeamsId] = useState<string>();
   /* @conditional-compile-remove(teams-adhoc-call) */
   const [outboundTeamsUsers, setOutboundTeamsUsers] = useState<string | undefined>();
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  const [manualIdEntry, setManualIdEntry] = useState(false);
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  const [teamsAccount, setTeamsAccount] = useState<string | undefined>();
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  const [teamsPassword, setTeamsPassword] = useState<string | undefined>();
 
   /* @conditional-compile-remove(PSTN-calls) */
   const [alternateCallerIdCalloutVisible, setAlternateCallerIdCalloutVisible] = useState<boolean>(false);
@@ -178,6 +200,27 @@ export const HomeScreen = (props: HomeScreenProps): JSX.Element => {
   /* @conditional-compile-remove(teams-adhoc-call) */
   const outboundTeamsUsersTextFieldLabelId: string = useId('outbound-teams-users-text-field');
 
+  const orgIdOptions: IComboBoxOption[] = [
+    { key: 'Header1', text: 'Teams users', itemType: SelectableOptionMenuItemType.Header },
+    { key: '8:orgid:db5cf205-e6b9-4e32-ab3b-08152a09caa1', text: '8:orgid:db5cf205-e6b9-4e32-ab3b-08152a09caa1' },
+    { key: '8:orgid:58d8f685-d477-4c58-bbab-e11774ddf4f4', text: '8:orgid:58d8f685-d477-4c58-bbab-e11774ddf4f4' },
+    { key: 'divider', text: '-', itemType: SelectableOptionMenuItemType.Divider },
+    { key: 'Header2', text: 'Call queues', itemType: SelectableOptionMenuItemType.Header },
+    { key: '28:orgid:ffca549c-0809-4351-975c-6b1e8909bed3', text: '28:orgid:ffca549c-0809-4351-975c-6b1e8909bed3' }
+  ];
+
+  useEffect(() => {
+    if (outboundTeamsUsers && teamsAccounts[outboundTeamsUsers]) {
+      setTeamsAccount(teamsAccounts[outboundTeamsUsers].userName);
+      setTeamsPassword(teamsAccounts[outboundTeamsUsers].password);
+    } else {
+      setTeamsAccount(undefined);
+      setTeamsPassword(undefined);
+    }
+  }, [outboundTeamsUsers]);
+
+  console.log('outboundTeamsUsers: ', outboundTeamsUsers);
+
   return (
     <Stack
       horizontal
@@ -198,7 +241,7 @@ export const HomeScreen = (props: HomeScreenProps): JSX.Element => {
               <ChoiceGroup
                 styles={callOptionsGroupStyles}
                 label={callOptionsGroupLabel}
-                defaultSelectedKey="ACSCall"
+                defaultSelectedKey="TeamsAdhoc"
                 options={callOptions}
                 required={true}
                 onChange={(_, option) => option && setChosenCallOption(option)}
@@ -207,15 +250,56 @@ export const HomeScreen = (props: HomeScreenProps): JSX.Element => {
             {
               /* @conditional-compile-remove(teams-identity-support) */ chosenCallOption.key === 'TeamsIdentity' && (
                 <Stack>
-                  <TextField
-                    className={outboundTextField}
-                    label={"Teams user ID's"}
-                    placeholder={"Comma seperated Teams user ID's"}
-                    onChange={(_, newValue) => setOutboundTeamsUsers(newValue)}
-                    onRenderLabel={(props?: ITextFieldProps) => (
-                      <TeamsUserIdsTextFieldLabel id={outboundTeamsUsersTextFieldLabelId} {...props} />
-                    )}
+                  <Toggle
+                    className={mergeStyles({ marginBottom: 0 })}
+                    label="Enter ID manually"
+                    onText="On"
+                    offText="Off"
+                    onChange={(_, checked) => {
+                      setManualIdEntry(!!checked);
+                    }}
                   />
+                  {!manualIdEntry && (
+                    <Stack>
+                      <Dropdown
+                        className={outboundTextField}
+                        label={'Teams user ID or call queue ID'}
+                        placeholder={'Teams user ID or call queue ID to call'}
+                        onChange={(_, option) => {
+                          option?.text && setOutboundTeamsUsers(option?.text);
+                        }}
+                        selectedKey={outboundTeamsUsers}
+                        options={orgIdOptions}
+                      />
+                      {teamsAccount && teamsPassword && (
+                        <Stack className={mergeStyles({ margin: '0.5rem' })} tokens={{ childrenGap: '0.25rem' }}>
+                          <Text>
+                            {'Teams account: '}
+                            {teamsAccount}
+                          </Text>
+                          <DefaultButton
+                            onClick={() => {
+                              navigator.clipboard.writeText(teamsPassword);
+                            }}
+                          >
+                            Copy Teams account password
+                          </DefaultButton>
+                        </Stack>
+                      )}
+                    </Stack>
+                  )}
+                  {manualIdEntry && (
+                    <TextField
+                      className={outboundTextField}
+                      label={'Teams user ID or call queue ID'}
+                      placeholder={'Teams user ID or call queue ID to call'}
+                      onChange={(_, newValue) => setOutboundTeamsUsers(newValue)}
+                      onRenderLabel={(props?: ITextFieldProps) => (
+                        <TeamsUserIdsTextFieldLabel id={outboundTeamsUsersTextFieldLabelId} {...props} />
+                      )}
+                      value={outboundTeamsUsers}
+                    />
+                  )}
                 </Stack>
               )
             }
@@ -283,15 +367,56 @@ export const HomeScreen = (props: HomeScreenProps): JSX.Element => {
             {
               /* @conditional-compile-remove(teams-adhoc-call) */ teamsAdhocChosen && (
                 <Stack>
-                  <TextField
-                    className={outboundTextField}
-                    label={"Teams user ID's"}
-                    placeholder={"Comma seperated Teams user ID's"}
-                    onChange={(_, newValue) => setOutboundTeamsUsers(newValue)}
-                    onRenderLabel={(props?: ITextFieldProps) => (
-                      <TeamsUserIdsTextFieldLabel id={outboundTeamsUsersTextFieldLabelId} {...props} />
-                    )}
+                  <Toggle
+                    className={mergeStyles({ marginBottom: 0 })}
+                    label="Enter ID manually"
+                    onText="On"
+                    offText="Off"
+                    onChange={(_, checked) => {
+                      setManualIdEntry(!!checked);
+                    }}
                   />
+                  {!manualIdEntry && (
+                    <Stack>
+                      <Dropdown
+                        className={outboundTextField}
+                        label={'Teams user ID or call queue ID'}
+                        placeholder={'Teams user ID or call queue ID to call'}
+                        onChange={(_, option) => {
+                          option?.text && setOutboundTeamsUsers(option?.text);
+                        }}
+                        selectedKey={outboundTeamsUsers}
+                        options={orgIdOptions}
+                      />
+                      {teamsAccount && teamsPassword && (
+                        <Stack className={mergeStyles({ margin: '0.5rem' })} tokens={{ childrenGap: '0.25rem' }}>
+                          <Text>
+                            {'Teams account: '}
+                            {teamsAccount}
+                          </Text>
+                          <DefaultButton
+                            onClick={() => {
+                              navigator.clipboard.writeText(teamsPassword);
+                            }}
+                          >
+                            Copy Teams account password
+                          </DefaultButton>
+                        </Stack>
+                      )}
+                    </Stack>
+                  )}
+                  {manualIdEntry && (
+                    <TextField
+                      className={outboundTextField}
+                      label={'Teams user ID or call queue ID'}
+                      placeholder={'Teams user ID or call queue ID to call'}
+                      onChange={(_, newValue) => setOutboundTeamsUsers(newValue)}
+                      onRenderLabel={(props?: ITextFieldProps) => (
+                        <TeamsUserIdsTextFieldLabel id={outboundTeamsUsersTextFieldLabelId} {...props} />
+                      )}
+                      value={outboundTeamsUsers}
+                    />
+                  )}
                 </Stack>
               )
             }
