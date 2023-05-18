@@ -19,6 +19,7 @@ export interface LobbyPageProps {
   /* @conditional-compile-remove(one-to-n-calling) */
   modalLayerHostId: string;
   options?: CallCompositeOptions;
+  onRenderAvatar?: OnRenderAvatarCallback;
 }
 
 export const TransferPage = (props: LobbyPageProps): JSX.Element => {
@@ -69,6 +70,7 @@ export const TransferPage = (props: LobbyPageProps): JSX.Element => {
           displayName={transferParticipant?.displayName}
           initialsName={transferParticipant?.displayName}
           statusString={state === 'connecting' ? 'Connecting...' : 'Transferring...'}
+          onRenderPlaceholder={props.onRenderAvatar}
         />
       )}
       dataUiId={'lobby-page'}
