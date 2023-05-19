@@ -219,8 +219,6 @@ export const HomeScreen = (props: HomeScreenProps): JSX.Element => {
     }
   }, [outboundTeamsUsers]);
 
-  console.log('outboundTeamsUsers: ', outboundTeamsUsers);
-
   return (
     <Stack
       horizontal
