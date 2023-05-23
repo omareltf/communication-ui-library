@@ -319,9 +319,24 @@ export interface CallCompositeStrings {
   roomNotFoundDetails?: string;
   /* @conditional-compile-remove(video-background-effects) */
   /**
-   * Label for the button to open effects and title of the effects
+   * Video Effects pane title.
    */
-  effects?: string;
+  videoEffectsPaneTitle: string;
+  /* @conditional-compile-remove(video-background-effects) */
+  /**
+   * Video Effects pane sub section title for choosing background.
+   */
+  videoEffectsPaneBackgroundSelectionTitle: string;
+  /* @conditional-compile-remove(video-background-effects) */
+  /**
+   * Label for the button to open effects
+   */
+  configurationPageVideoEffectsButtonLabel?: string;
+  /* @conditional-compile-remove(video-background-effects) */
+  /**
+   * Error message for video effect failure
+   */
+  unableToStartVideoEffect?: string;
   /* @conditional-compile-remove(video-background-effects) */
   /**
    * Label for the blur video background effect item
@@ -342,6 +357,11 @@ export interface CallCompositeStrings {
    * Tooltip text for the blur video background effect item
    */
   removeBackgroundTooltip?: string;
+  /* @conditional-compile-remove(video-background-effects) */
+  /**
+   * Text to show when warning the user the camera is off and inform the user to turn the camera on to see the selected video background effect.
+   */
+  cameraOffBackgroundEffectWarningText?: string;
   /* @conditional-compile-remove(rooms) */
   /**
    * Title text of the page shown to the user when the user attempts to join a room to which they are not invited.

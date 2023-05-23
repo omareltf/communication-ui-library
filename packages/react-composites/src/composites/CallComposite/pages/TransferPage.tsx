@@ -4,25 +4,14 @@ import { IStyle, Persona, Spinner, SpinnerSize, Stack, Text, mergeStyles } from 
 import { ErrorBar, OnRenderAvatarCallback, VideoGallery } from '@internal/react-components';
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocale } from '../../localization';
-import { CallCompositeOptions } from '../CallComposite';
 import { CallArrangement } from '../components/CallArrangement';
 import { usePropsFor } from '../hooks/usePropsFor';
 import { useSelector } from '../hooks/useSelector';
 import { getCallId, getTransferCall } from '../selectors/baseSelectors';
 import { reduceCallControlsForMobile } from '../utils';
+import { LobbyPageProps } from './LobbyPage';
 
-/**
- * @private
- */
-export interface LobbyPageProps {
-  mobileView: boolean;
-  /* @conditional-compile-remove(one-to-n-calling) */
-  modalLayerHostId: string;
-  options?: CallCompositeOptions;
-  onRenderAvatar?: OnRenderAvatarCallback;
-}
-
-export const TransferPage = (props: LobbyPageProps): JSX.Element => {
+export const TransferPage = (props: LobbyPageProps & { onRenderAvatar?: OnRenderAvatarCallback }): JSX.Element => {
   const errorBarProps = usePropsFor(ErrorBar);
   const strings = useLocale().strings.call;
   const videoGalleryProps = usePropsFor(VideoGallery);
@@ -73,7 +62,9 @@ export const TransferPage = (props: LobbyPageProps): JSX.Element => {
           onRenderPlaceholder={props.onRenderAvatar}
         />
       )}
-      dataUiId={'lobby-page'}
+      dataUiId={'transfer-page'}
+      updateSidePaneRenderer={props.updateSidePaneRenderer}
+      mobileChatTabHeader={props.mobileChatTabHeader}
     />
   );
 };

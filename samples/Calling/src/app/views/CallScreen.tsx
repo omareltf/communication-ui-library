@@ -17,6 +17,8 @@ import {
 import { useTeamsCallAdapter, TeamsCallAdapter } from '@azure/communication-react';
 /* @conditional-compile-remove(rooms) */
 import { AzureCommunicationCallAdapterOptions } from '@azure/communication-react';
+/* @conditional-compile-remove(video-background-effects) */
+import { TeamsAdapterOptions } from '@azure/communication-react';
 /* @conditional-compile-remove(rooms) */
 import { Role } from '@azure/communication-react';
 import React, { useCallback, useMemo, useRef } from 'react';
@@ -70,6 +72,7 @@ export const CallScreen = (props: CallScreenProps): JSX.Element => {
     [subscribeAdapterEvents]
   );
 
+  /* @conditional-compile-remove(teams-identity-support) */
   const afterTeamsCallAdapterCreate = useCallback(
     async (adapter: TeamsCallAdapter): Promise<TeamsCallAdapter> => {
       subscribeAdapterEvents(adapter);
@@ -110,12 +113,25 @@ const TeamsCallScreen = (props: TeamsCallScreenProps): JSX.Element => {
     throw new Error('A MicrosoftTeamsUserIdentifier must be provided for Teams Identity Call.');
   }
 
-  const callAdapterOptions: AzureCommunicationCallAdapterOptions = useMemo(
-    () => ({ onFetchProfile, onTransferRequest }),
+  /* @conditional-compile-remove(video-background-effects) */
+  const teamsAdapterOptions: TeamsAdapterOptions = useMemo(
+    () => ({
+      videoBackgroundImages,
+      onFetchProfile,
+      onTransferRequest
+    }),
     []
   );
 
-  const adapter = useTeamsCallAdapter({ ...adapterArgs, userId, locator, options: callAdapterOptions }, afterCreate);
+  const adapter = useTeamsCallAdapter(
+    {
+      ...adapterArgs,
+      userId,
+      locator,
+      /* @conditional-compile-remove(video-background-effects) */ options: teamsAdapterOptions
+    },
+    afterCreate
+  );
   return <CallCompositeContainer {...props} adapter={adapter} />;
 };
 
@@ -125,7 +141,9 @@ type AzureCommunicationCallScreenProps = CallScreenProps & {
 };
 
 const AzureCommunicationCallScreen = (props: AzureCommunicationCallScreenProps): JSX.Element => {
-  const { roleHint, afterCreate, callLocator: locator, userId, ...adapterArgs } = props;
+  const { afterCreate, callLocator: locator, userId, ...adapterArgs } = props;
+  /* @conditional-compile-remove(rooms) */
+  const { roleHint } = props;
 
   if (!('communicationUserId' in userId)) {
     throw new Error('A MicrosoftTeamsUserIdentifier must be provided for Teams Identity Call.');
@@ -133,44 +151,6 @@ const AzureCommunicationCallScreen = (props: AzureCommunicationCallScreenProps):
 
   /* @conditional-compile-remove(rooms) */ /* @conditional-compile-remove(video-background-effects) */
   const callAdapterOptions: AzureCommunicationCallAdapterOptions = useMemo(() => {
-    /* @conditional-compile-remove(video-background-effects) */
-    const videoBackgroundImages = [
-      {
-        key: 'ab1',
-        url: '/backgrounds/abstract1.jpg',
-        tooltipText: 'Custom Background'
-      },
-      {
-        key: 'ab2',
-        url: '/backgrounds/abstract2.jpg',
-        tooltipText: 'Custom Background'
-      },
-      {
-        key: 'ab3',
-        url: '/backgrounds/abstract3.jpg',
-        tooltipText: 'Custom Background'
-      },
-      {
-        key: 'ab4',
-        url: '/backgrounds/room1.jpg',
-        tooltipText: 'Custom Background'
-      },
-      {
-        key: 'ab5',
-        url: '/backgrounds/room2.jpg',
-        tooltipText: 'Custom Background'
-      },
-      {
-        key: 'ab6',
-        url: '/backgrounds/room3.jpg',
-        tooltipText: 'Custom Background'
-      },
-      {
-        key: 'ab7',
-        url: '/backgrounds/room4.jpg',
-        tooltipText: 'Custom Background'
-      }
-    ];
     return {
       onFetchProfile,
       /* @conditional-compile-remove(rooms) */
@@ -208,6 +188,7 @@ const convertPageStateToString = (state: CallAdapterState): string => {
   }
 };
 
+/* @conditional-compile-remove(teams-adhoc-call) */
 const onFetchProfile = async (userId: string, defaultProfile?: Profile): Promise<Profile | undefined> => {
   if (userId.startsWith('28:orgid:')) {
     return { displayName: 'Call queue' };
@@ -215,6 +196,46 @@ const onFetchProfile = async (userId: string, defaultProfile?: Profile): Promise
   return defaultProfile;
 };
 
+/* @conditional-compile-remove(teams-adhoc-call) */
 const onTransferRequest = (args): CallCommon => {
   return args.accept();
 };
+
+/* @conditional-compile-remove(video-background-effects) */
+const videoBackgroundImages = [
+  {
+    key: 'ab1',
+    url: '/backgrounds/abstract1.jpg',
+    tooltipText: 'Custom Background'
+  },
+  {
+    key: 'ab2',
+    url: '/backgrounds/abstract2.jpg',
+    tooltipText: 'Custom Background'
+  },
+  {
+    key: 'ab3',
+    url: '/backgrounds/abstract3.jpg',
+    tooltipText: 'Custom Background'
+  },
+  {
+    key: 'ab4',
+    url: '/backgrounds/room1.jpg',
+    tooltipText: 'Custom Background'
+  },
+  {
+    key: 'ab5',
+    url: '/backgrounds/room2.jpg',
+    tooltipText: 'Custom Background'
+  },
+  {
+    key: 'ab6',
+    url: '/backgrounds/room3.jpg',
+    tooltipText: 'Custom Background'
+  },
+  {
+    key: 'ab7',
+    url: '/backgrounds/room4.jpg',
+    tooltipText: 'Custom Background'
+  }
+];
