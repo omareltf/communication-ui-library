@@ -12,7 +12,7 @@ import { ChatAdapter, ChatAdapterState } from '../../ChatComposite';
 import { FileUploadsUiState } from '../../ChatComposite';
 import { AdapterErrors } from '../../common/adapters';
 /* @conditional-compile-remove(unsupported-browser) */
-import { EnvironmentInfo } from '@azure/communication-calling';
+import { CallCommon, EnvironmentInfo, TransferRequestedEventArgs } from '@azure/communication-calling';
 
 /**
  * UI state pertaining to the {@link CallWithChatComposite}.
@@ -86,6 +86,10 @@ export interface CallWithChatClientState {
   /* @conditional-compile-remove(video-background-effects) */
   /** State to track the selected video background effect */
   selectedVideoBackgroundEffect?: SelectedVideoBackgroundEffect;
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  onTransferRequest?: (args: TransferRequestedEventArgs) => CallCommon;
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  transferCall?: CallCommon;
 }
 
 /**

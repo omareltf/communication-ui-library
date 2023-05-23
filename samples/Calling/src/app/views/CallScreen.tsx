@@ -24,6 +24,7 @@ import { createAutoRefreshingCredential } from '../utils/credential';
 import { WEB_APP_TITLE } from '../utils/AppUtils';
 import { CallCompositeContainer } from './CallCompositeContainer';
 import { Profile } from '@internal/react-composites';
+import { CallCommon } from '@azure/communication-calling';
 
 export interface CallScreenProps {
   token: string;
@@ -109,7 +110,10 @@ const TeamsCallScreen = (props: TeamsCallScreenProps): JSX.Element => {
     throw new Error('A MicrosoftTeamsUserIdentifier must be provided for Teams Identity Call.');
   }
 
-  const callAdapterOptions: AzureCommunicationCallAdapterOptions = useMemo(() => ({ onFetchProfile }), []);
+  const callAdapterOptions: AzureCommunicationCallAdapterOptions = useMemo(
+    () => ({ onFetchProfile, onTransferRequest }),
+    []
+  );
 
   const adapter = useTeamsCallAdapter({ ...adapterArgs, userId, locator, options: callAdapterOptions }, afterCreate);
   return <CallCompositeContainer {...props} adapter={adapter} />;
@@ -172,7 +176,8 @@ const AzureCommunicationCallScreen = (props: AzureCommunicationCallScreenProps):
       /* @conditional-compile-remove(rooms) */
       roleHint,
       /* @conditional-compile-remove(video-background-effects) */
-      videoBackgroundImages
+      videoBackgroundImages,
+      onTransferRequest
     };
   }, [/* @conditional-compile-remove(rooms) */ roleHint]);
 
@@ -208,4 +213,8 @@ const onFetchProfile = async (userId: string, defaultProfile?: Profile): Promise
     return { displayName: 'Call queue' };
   }
   return defaultProfile;
+};
+
+const onTransferRequest = (args): CallCommon => {
+  return args.accept();
 };

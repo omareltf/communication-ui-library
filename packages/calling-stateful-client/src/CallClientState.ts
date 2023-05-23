@@ -548,8 +548,6 @@ export interface CallClientState {
    * state to track the environment that the stateful client was made in is supported
    */
   environmentInfo?: EnvironmentInfo;
-  /* @conditional-compile-remove(teams-adhoc-call) */
-  transferTargetCallId?: string;
 }
 
 /**

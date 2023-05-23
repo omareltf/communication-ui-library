@@ -14,6 +14,7 @@ import { BackgroundReplacementConfig } from '@azure/communication-calling-effect
 import { BaseCustomStyles } from '@internal/react-components';
 import { Call } from '@azure/communication-calling';
 import { CallAgent } from '@azure/communication-calling';
+import { CallCommon } from '@azure/communication-calling';
 import { CallState } from '@internal/calling-stateful-client';
 import { CaptionsAvailableLanguageStrings } from '@internal/react-components';
 import { CaptionsInfo } from '@internal/calling-stateful-client';
@@ -60,6 +61,7 @@ import { TeamsCall } from '@azure/communication-calling';
 import { TeamsCallAgent } from '@azure/communication-calling';
 import { TeamsMeetingLinkLocator } from '@azure/communication-calling';
 import { Theme } from '@fluentui/react';
+import { TransferRequestedEventArgs } from '@azure/communication-calling';
 import { VideoDeviceInfo } from '@azure/communication-calling';
 import { VideoStreamOptions } from '@internal/react-components';
 
@@ -109,6 +111,8 @@ export type AzureCommunicationCallAdapterArgs = {
 export type AzureCommunicationCallAdapterOptions = {
     roleHint?: Role;
     videoBackgroundImages?: VideoBackgroundImage[];
+    onFetchProfile?: OnFetchProfileCallback;
+    onTransferRequest?: (args: TransferRequestedEventArgs) => CallCommon;
 };
 
 // @public
@@ -223,11 +227,12 @@ export type CallAdapterClientState = {
     latestErrors: AdapterErrors;
     alternateCallerId?: string;
     environmentInfo?: EnvironmentInfo;
-    transferTargetCall?: CallState;
     roleHint?: Role;
     cameraStatus?: 'On' | 'Off';
     videoBackgroundImages?: VideoBackgroundImage[];
     selectedVideoBackgroundEffect?: SelectedVideoBackgroundEffect;
+    onTransferRequest?: (args: TransferRequestedEventArgs) => CallCommon;
+    transferCall?: CallCommon;
 };
 
 // @public
@@ -291,6 +296,8 @@ export interface CallAndChatLocator {
     callLocator: GroupCallLocator | /* @conditional-compile-remove(teams-adhoc-call) */ CallParticipantsLocator;
     chatThreadId: string;
 }
+
+export { CallCommon }
 
 // @public
 export const CallComposite: (props: CallCompositeProps) => JSX.Element;
@@ -696,7 +703,11 @@ export interface CallWithChatClientState {
     isTeamsCall: boolean;
     latestCallErrors: AdapterErrors;
     latestChatErrors: AdapterErrors;
+    // (undocumented)
+    onTransferRequest?: (args: TransferRequestedEventArgs) => CallCommon;
     selectedVideoBackgroundEffect?: SelectedVideoBackgroundEffect;
+    // (undocumented)
+    transferCall?: CallCommon;
     userId: CommunicationIdentifierKind;
     videoBackgroundImages?: VideoBackgroundImage[];
 }

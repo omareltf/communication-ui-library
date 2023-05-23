@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { CallState as SDKCallStatus, DominantSpeakersInfo } from '@azure/communication-calling';
+import { CallState as SDKCallStatus, DominantSpeakersInfo, CallCommon } from '@azure/communication-calling';
 /* @conditional-compile-remove(unsupported-browser) */
 import { EnvironmentInfo } from '@azure/communication-calling';
 /* @conditional-compile-remove(rooms) */
@@ -70,7 +70,7 @@ export const getPage = (state: CallAdapterState): CallCompositePage => state.pag
 /**
  * @private
  */
-export const getTransferCall = (state: CallAdapterState): CallState | undefined => state.transferTargetCall;
+export const getTransferCall = (state: CallAdapterState): CallCommon | undefined => state.transferCall;
 
 /**
  * @private

@@ -22,8 +22,6 @@ import { TranscriptionSubscriber } from './TranscriptionSubscriber';
 /* @conditional-compile-remove(close-captions) */
 import { _isTeamsMeetingCall } from './TypeGuards';
 import { UserFacingDiagnosticsSubscriber } from './UserFacingDiagnosticsSubscriber';
-/* @conditional-compile-remove(teams-adhoc-call) */
-import { TransferCallSubscriber } from './TransferCallSubscriber';
 
 /**
  * Keeps track of the listeners assigned to a particular call because when we get an event from SDK, it doesn't tell us
@@ -44,8 +42,6 @@ export class CallSubscriber {
   private _captionsSubscriber?: CaptionsSubscriber;
   /* @conditional-compile-remove(video-background-effects) */
   private _localVideoStreamVideoEffectsSubscribers: Map<string, LocalVideoStreamVideoEffectsSubscriber>;
-  /* @conditional-compile-remove(teams-adhoc-call) */
-  private _transferCallSubscriber: TransferCallSubscriber;
 
   constructor(call: CallCommon, context: CallContext, internalContext: InternalCallContext) {
     this._call = call;
@@ -69,8 +65,6 @@ export class CallSubscriber {
       this._context,
       this._call.feature(Features.Transcription)
     );
-    /* @conditional-compile-remove(teams-adhoc-call) */
-    this._transferCallSubscriber = new TransferCallSubscriber(this._context, this._call.feature(Features.Transfer));
     /* @conditional-compile-remove(video-background-effects) */
     this._localVideoStreamVideoEffectsSubscribers = new Map();
 
@@ -153,8 +147,6 @@ export class CallSubscriber {
     this._transcriptionSubscriber.unsubscribe();
     /* @conditional-compile-remove(close-captions) */
     this._captionsSubscriber?.unsubscribe();
-    /* @conditional-compile-remove(teams-adhoc-call) */
-    this._transferCallSubscriber?.unsubscribe();
   };
 
   private addParticipantListener(participant: RemoteParticipant): void {

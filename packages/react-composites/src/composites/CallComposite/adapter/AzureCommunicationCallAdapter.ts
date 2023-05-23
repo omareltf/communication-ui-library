@@ -32,6 +32,8 @@ import {
   VideoOptions,
   Call
 } from '@azure/communication-calling';
+/* @conditional-compile-remove(teams-adhoc-call) */
+import { CallCommon as CallCommonSDK, TransferRequestedEventArgs } from '@azure/communication-calling';
 /* @conditional-compile-remove(close-captions) */
 import { StartCaptionsOptions, TeamsCaptionsInfo } from '@azure/communication-calling';
 /* @conditional-compile-remove(video-background-effects) */
@@ -107,6 +109,9 @@ class CallContext {
       maxListeners?: number;
       onFetchProfile?: OnFetchProfileCallback;
       /* @conditional-compile-remove(video-background-effects) */ videoBackgroundImages?: VideoBackgroundImage[];
+      /* @conditional-compile-remove(teams-adhoc-call) */ onTransferRequest?: (
+        args: TransferRequestedEventArgs
+      ) => CallCommon;
     }
   ) {
     this.state = {
@@ -124,6 +129,7 @@ class CallContext {
       /* @conditional-compile-remove(rooms) */ roleHint: options?.roleHint,
       /* @conditional-compile-remove(video-background-effects) */ videoBackgroundImages: options?.videoBackgroundImages,
       /* @conditional-compile-remove(video-background-effects) */ selectedVideoBackgroundEffect: undefined,
+      /* @conditional-compile-remove(teams-adhoc-call) */ onTransferRequest: options?.onTransferRequest,
       cameraStatus: undefined
     };
     this.emitter.setMaxListeners(options?.maxListeners ?? 50);
@@ -162,10 +168,6 @@ class CallContext {
     this.callId = callId;
   }
 
-  public setTransferTargetCall(call: CallState | undefined): void {
-    this.setState({ ...this.state, transferTargetCall: call });
-  }
-
   public onCallEnded(handler: (callEndedData: CallAdapterCallEndedEvent) => void): void {
     this.emitter.on('callEnded', handler);
   }
@@ -184,14 +186,22 @@ class CallContext {
       environmentInfo: this.state.environmentInfo,
       unsupportedBrowserVersionOptedIn: this.state.unsupportedBrowserVersionsAllowed
     };
-    const transferCall = clientState.transferTargetCallId
-      ? findTransferCall(clientState.calls, clientState.transferTargetCallId)
-      : undefined;
+
+    let transferCallState: CallState | undefined = undefined;
+    if (this.state.transferCall) {
+      transferCallState = findTransferCallState(this.state.transferCall.id, clientState);
+      if (!transferCallState) {
+        this.setTransferCall(undefined);
+      }
+    }
+
+    console.log('DEBUG clientState: ', clientState);
+
     const newPage = getCallCompositePage(
       call,
       latestEndedCall,
       /* @conditional-compile-remove(unsupported-browser) */ environmentInfo,
-      transferCall
+      transferCallState
     );
     if (!IsCallEndedPage(oldPage) && IsCallEndedPage(newPage)) {
       this.emitter.emit('callEnded', { callId: this.callId });
@@ -215,8 +225,7 @@ class CallContext {
           call?.localVideoStreams.find((s) => s.mediaStreamType === 'Video') ||
           clientState.deviceManager.unparentedViews.find((s) => s.mediaStreamType === 'Video')
             ? 'On'
-            : 'Off',
-        transferTargetCall: transferCall
+            : 'Off'
       });
     }
   }
@@ -235,6 +244,11 @@ class CallContext {
   public setSelectedVideoBackgroundEffect(selectedVideoBackgroundEffect?: SelectedVideoBackgroundEffect): void {
     this.setState({ ...this.state, selectedVideoBackgroundEffect });
   }
+
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  public setTransferCall(call?: CallCommon): void {
+    this.setState({ ...this.state, transferCall: call });
+  }
 }
 
 const findLatestEndedCall = (calls: { [key: string]: CallState }): CallState | undefined => {
@@ -251,8 +265,11 @@ const findLatestEndedCall = (calls: { [key: string]: CallState }): CallState | u
   return latestCall;
 };
 
-const findTransferCall = (calls: { [key: string]: CallState }, transferTargetCallId: string): CallState | undefined => {
-  const callStates = Object.values(calls);
+const findTransferCallState = (
+  transferTargetCallId: string,
+  callClientState: CallClientState
+): CallState | undefined => {
+  const callStates = Object.values(callClientState.calls);
   if (callStates.length === 0) {
     return undefined;
   }
@@ -326,20 +343,12 @@ export class AzureCommunicationCallAdapter<AgentType extends CallAgent | BetaTea
         this.context.setCurrentCallId(this.call.id);
       }
 
-      if (
-        this.call &&
-        this.context.getState().transferTargetCall?.id &&
-        this.call.id !== this.context.getState().transferTargetCall?.id
-      ) {
-        const cAgent = callAgent as CallAgent;
-        const transferCall = cAgent.calls.find(
-          (call) => call.id === this.context.getState().transferTargetCall?.id && call.state === 'Connected'
-        );
-        if (transferCall) {
-          this.processNewCall(transferCall);
-          this.context.setTransferTargetCall(undefined);
-          console.log('DEBUG processing new call: ', transferCall?.id);
-        }
+      const transferCall = this.context.getState().transferCall;
+      if (this.call && transferCall && this.call.id !== transferCall.id && transferCall.state === 'Connected') {
+        this.processNewCall(transferCall);
+        this.context.setTransferCall(undefined);
+        console.log('DEBUG set transferCall to undefined');
+        console.log('DEBUG this.context.getState(): ', this.context.getState());
       }
 
       this.context.updateClientState(clientState);
@@ -796,6 +805,8 @@ export class AzureCommunicationCallAdapter<AgentType extends CallAgent | BetaTea
     this.call?.on('idChanged', this.callIdChanged.bind(this));
     /* @conditional-compile-remove(close-captions) */
     this.call?.on('stateChanged', this.subscribeToCaptionEvents.bind(this));
+    /* @conditional-compile-remove(teams-adhoc-call) */
+    this.call?.feature(Features.Transfer).on('transferRequested', this.transferRequested.bind(this));
   }
 
   private unsubscribeCallEvents(): void {
@@ -864,6 +875,18 @@ export class AzureCommunicationCallAdapter<AgentType extends CallAgent | BetaTea
     this.emitter.emit('isCaptionsActiveChanged', {
       isActive: this.call?.feature(Features.TeamsCaptions).isCaptionsFeatureActive
     });
+  }
+
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  private transferRequested(args: TransferRequestedEventArgs): void {
+    console.log('DEBUG transferRequested current transferCall: ', this.context.getState().transferCall);
+    if (!this.context.getState().transferCall) {
+      const call = this.context.getState().onTransferRequest?.(args);
+      console.log('DEBUG transferRequested result call: ', call);
+      if (call) {
+        this.context.setTransferCall(call);
+      }
+    }
   }
 
   private callIdChanged(): void {
@@ -978,6 +1001,8 @@ export type AzureCommunicationCallAdapterOptions = {
    * and would not be updated again within the lifecycle of adapter.
    */
   onFetchProfile?: OnFetchProfileCallback;
+
+  onTransferRequest?: (args: TransferRequestedEventArgs) => CallCommonSDK;
 };
 
 /**

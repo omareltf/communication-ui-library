@@ -7,7 +7,9 @@ import { CaptionsInfo } from '@internal/calling-stateful-client';
 /* @conditional-compile-remove(video-background-effects) */
 import { BackgroundBlurConfig, BackgroundReplacementConfig } from '@azure/communication-calling-effects';
 /* @conditional-compile-remove(teams-identity-support) */
-import { TeamsCall } from '@azure/communication-calling';
+import { TeamsCall, TransferRequestedEventArgs } from '@azure/communication-calling';
+/* @conditional-compile-remove(teams-adhoc-call) */
+import { CallCommon } from '@azure/communication-calling';
 /* @conditional-compile-remove(close-captions) */
 import { StartCaptionsOptions } from '@azure/communication-calling';
 /* @conditional-compile-remove(unsupported-browser) */
@@ -109,7 +111,6 @@ export type CallAdapterClientState = {
    * Environment information about system the adapter is made on
    */
   environmentInfo?: EnvironmentInfo;
-  transferTargetCall?: CallState;
   /* @conditional-compile-remove(rooms) */
   /**
    * Use this to hint the role of the user when the role is not available before a Rooms call is started. This value
@@ -132,6 +133,10 @@ export type CallAdapterClientState = {
    * State to track the selected video background effect.
    */
   selectedVideoBackgroundEffect?: SelectedVideoBackgroundEffect;
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  onTransferRequest?: (args: TransferRequestedEventArgs) => CallCommon;
+  /* @conditional-compile-remove(teams-adhoc-call) */
+  transferCall?: CallCommon;
 };
 
 /**

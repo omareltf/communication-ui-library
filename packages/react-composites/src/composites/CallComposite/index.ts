@@ -57,6 +57,9 @@ export type {
   VideoBackgroundReplacementEffect
 } from './adapter/CallAdapter';
 
+/* @conditional-compile-remove(teams-adhoc-call) */
+export type { CallCommon } from '@azure/communication-calling';
+
 export type {
   CallAdapter,
   CallAdapterCallEndedEvent,

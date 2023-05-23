@@ -73,8 +73,6 @@ export interface CallClientState {
         [key: string]: IncomingCallState;
     };
     latestErrors: CallErrors;
-    // (undocumented)
-    transferTargetCallId?: string;
     userId: CommunicationIdentifierKind;
 }
 
